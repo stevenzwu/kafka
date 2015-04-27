@@ -12,6 +12,7 @@
  */
 package org.apache.kafka.clients.producer;
 
+import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -545,12 +546,23 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
                 log.error("Interrupted while joining ioThread", t);
             }
         }
-        ClientUtils.closeQuietly(metrics, "producer metrics", firstException);
-        ClientUtils.closeQuietly(keySerializer, "producer keySerializer", firstException);
-        ClientUtils.closeQuietly(valueSerializer, "producer valueSerializer", firstException);
+        closeQuietly(metrics, "producer metrics", firstException);
+        closeQuietly(keySerializer, "producer keySerializer", firstException);
+        closeQuietly(valueSerializer, "producer valueSerializer", firstException);
         log.debug("The Kafka producer has closed.");
         if (firstException.get() != null && !swallowException) {
             throw new KafkaException("Failed to close kafka producer", firstException.get());
+        }
+    }
+
+    private  void closeQuietly(Closeable c, String name, AtomicReference<Throwable> firstException) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (Throwable t) {
+                firstException.compareAndSet(null, t);
+                log.error("Failed to close " + name, t);
+            }
         }
     }
 

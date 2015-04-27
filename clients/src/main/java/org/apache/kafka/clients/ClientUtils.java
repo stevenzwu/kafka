@@ -12,11 +12,9 @@
  */
 package org.apache.kafka.clients;
 
-import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
@@ -51,14 +49,4 @@ public class ClientUtils {
         return addresses;
     }
 
-    public static void closeQuietly(Closeable c, String name, AtomicReference<Throwable> firstException) {
-        if (c != null) {
-            try {
-                c.close();
-            } catch (Throwable t) {
-                firstException.compareAndSet(null, t);
-                log.error("Failed to close " + name, t);
-            }
-        }
-    }
 }

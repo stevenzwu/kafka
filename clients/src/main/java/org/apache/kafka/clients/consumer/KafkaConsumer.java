@@ -12,6 +12,7 @@
  */
 package org.apache.kafka.clients.consumer;
 
+import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -840,16 +841,26 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
         log.trace("Closing the Kafka consumer.");
         AtomicReference<Throwable> firstException = new AtomicReference<Throwable>();
         this.closed = true;
-        ClientUtils.closeQuietly(metrics, "consumer metrics", firstException);
-        ClientUtils.closeQuietly(client, "consumer network client", firstException);
-        ClientUtils.closeQuietly(keyDeserializer, "consumer key deserializer", firstException);
-        ClientUtils.closeQuietly(valueDeserializer, "consumer value deserializer", firstException);
+        closeQuietly(metrics, "consumer metrics", firstException);
+        closeQuietly(client, "consumer network client", firstException);
+        closeQuietly(keyDeserializer, "consumer key deserializer", firstException);
+        closeQuietly(valueDeserializer, "consumer value deserializer", firstException);
         log.debug("The Kafka consumer has closed.");
         if (firstException.get() != null && !swallowException) {
             throw new KafkaException("Failed to close kafka consumer", firstException.get());
         }
     }
 
+    private  void closeQuietly(Closeable c, String name, AtomicReference<Throwable> firstException) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (Throwable t) {
+                firstException.compareAndSet(null, t);
+                log.error("Failed to close " + name, t);
+            }
+        }
+    }
 
     private boolean shouldAutoCommit(long now) {
         return this.autoCommit && this.lastCommitAttemptMs <= now - this.autoCommitIntervalMs;
