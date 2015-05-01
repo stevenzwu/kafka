@@ -29,7 +29,7 @@ public class KafkaProducerTest {
 
 
     @Test
-    public void testConstructorFailureCloseResource() throws Exception {
+    public void testConstructorFailureCloseResource() {
         Properties props = new Properties();
         props.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "testConstructorClose");
         props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "some.invalid.hostname.foo.bar:9999");
@@ -50,7 +50,7 @@ public class KafkaProducerTest {
     }
 
     @Test
-    public void testSerializerClose() throws Exception {
+    public void testSerializerClose() {
         Properties props = new Properties();
         props.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "testConstructorClose");
         props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
