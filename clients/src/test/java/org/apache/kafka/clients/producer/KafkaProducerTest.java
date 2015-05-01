@@ -19,6 +19,7 @@ package org.apache.kafka.clients.producer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.test.MockMetricsReporter;
+import org.apache.kafka.test.MockSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,7 +29,7 @@ public class KafkaProducerTest {
 
 
     @Test
-    public void testConstructorClose() throws Exception {
+    public void testConstructorFailureCloseResource() throws Exception {
         Properties props = new Properties();
         props.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "testConstructorClose");
         props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "some.invalid.hostname.foo.bar:9999");
@@ -46,5 +47,25 @@ public class KafkaProducerTest {
             return;
         }
         Assert.fail("should have caught an exception and returned");
+    }
+
+    @Test
+    public void testSerializerClose() throws Exception {
+        Properties props = new Properties();
+        props.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "testConstructorClose");
+        props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
+        props.setProperty(ProducerConfig.METRIC_REPORTER_CLASSES_CONFIG, MockMetricsReporter.class.getName());
+
+        final int oldInitCount = MockSerializer.INIT_COUNT.get();
+        final int oldCloseCount = MockSerializer.CLOSE_COUNT.get();
+
+        KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(
+                props, new MockSerializer(), new MockSerializer());
+        Assert.assertEquals(oldInitCount + 2, MockSerializer.INIT_COUNT.get());
+        Assert.assertEquals(oldCloseCount, MockSerializer.CLOSE_COUNT.get());
+
+        producer.close();
+        Assert.assertEquals(oldInitCount + 2, MockSerializer.INIT_COUNT.get());
+        Assert.assertEquals(oldCloseCount + 2, MockSerializer.CLOSE_COUNT.get());
     }
 }
